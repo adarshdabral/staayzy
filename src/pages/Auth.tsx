@@ -126,7 +126,7 @@ const Auth = () => {
         } else {
           toast({
             title: "Account created!",
-            description: "Welcome to RoomHub! You are now logged in.",
+            description: "Welcome to Stazy! You are now logged in.",
           });
           navigate("/");
         }
@@ -158,7 +158,7 @@ const Auth = () => {
           <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
             <Home className="w-5 h-5 text-primary-foreground" />
           </div>
-          <span className="text-xl font-bold text-foreground">RoomHub</span>
+          <span className="text-xl font-bold text-foreground">Stazy</span>
         </Link>
       </header>
 
@@ -172,7 +172,7 @@ const Auth = () => {
             <CardDescription>
               {mode === "login"
                 ? "Sign in to access your account"
-                : "Join RoomHub to find or list rooms"}
+                : "Join Stazy to find or list rooms"}
             </CardDescription>
           </CardHeader>
 

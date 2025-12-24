@@ -37,7 +37,7 @@ const HowItWorks = () => {
             Simple Process
           </span>
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mt-2">
-            How RoomHub Works
+            How Stazy Works
           </h2>
           <p className="text-muted-foreground mt-3 max-w-xl mx-auto">
             From search to move-in, we make finding your new home simple and secure.

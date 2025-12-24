@@ -33,7 +33,7 @@ const CTASection = () => {
               </h2>
               
               <p className="text-white/80 text-lg mb-8 max-w-lg">
-                Join 5,000+ property owners who trust RoomHub to find reliable 
+                Join 5,000+ property owners who trust Stazy to find reliable 
                 tenants and manage secure payments.
               </p>
 
