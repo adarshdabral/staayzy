@@ -38,7 +38,7 @@ const mockPosts = [
   {
     id: "2",
     type: "warning",
-    content: "⚠️ Beware of brokers charging extra fees in the University Zone. Always verify directly with owners on RoomHub. Some brokers are asking for 2 months rent as brokerage!",
+    content: "⚠️ Beware of brokers charging extra fees in the University Zone. Always verify directly with owners on Stazy. Some brokers are asking for 2 months rent as brokerage!",
     likes: 89,
     comments: 23,
     timeAgo: "5h ago",

@@ -16,7 +16,7 @@ const buzzPosts = [
   {
     id: "2",
     type: "warning",
-    content: "Beware of brokers charging extra fees in the University Zone. Always verify directly with owners on RoomHub.",
+    content: "Beware of brokers charging extra fees in the University Zone. Always verify directly with owners on Stazy.",
     likes: 89,
     comments: 23,
     timeAgo: "5h ago",
