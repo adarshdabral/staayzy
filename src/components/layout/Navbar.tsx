@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Search, MessageSquare, ShoppingBag, Menu, X, User, LogOut, Loader2 } from "lucide-react";
+import { Home, Search, MessageSquare, ShoppingBag, Menu, X, User, LogOut, Loader2, LayoutDashboard } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -80,6 +80,13 @@ const Navbar = () => {
                     {user.email}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard" className="flex items-center cursor-pointer">
+                      <LayoutDashboard className="w-4 h-4 mr-2" />
+                      Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                     <LogOut className="w-4 h-4 mr-2" />
                     Sign out
@@ -136,6 +143,12 @@ const Navbar = () => {
                   <div className="px-3 py-2 text-sm text-muted-foreground">
                     {user.email}
                   </div>
+                  <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                    <Button variant="ghost" className="w-full justify-start gap-3">
+                      <LayoutDashboard className="w-5 h-5" />
+                      Dashboard
+                    </Button>
+                  </Link>
                   <Button
                     variant="ghost"
                     className="w-full justify-start gap-3 text-destructive hover:text-destructive"
