@@ -10,34 +10,41 @@ export const useUserRole = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!user) {
+      setRole(null);
+      setLoading(false);
+      return;
+    }
+
     const fetchRole = async () => {
-      if (!user) {
-        setRole(null);
-        setLoading(false);
-        return;
-      }
+      setLoading(true);
 
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", user.id)
-        .single();
+        .limit(1);
 
       if (error) {
-        console.error("Error fetching user role:", error);
-        setRole("tenant"); // Default to tenant
+        console.error("Role fetch error:", error);
+        setRole(null);
+      } else if (!data || data.length === 0) {
+        setRole("tenant");
       } else {
-        setRole(data.role as AppRole);
+        setRole(data[0].role as AppRole);
       }
+
       setLoading(false);
     };
 
     fetchRole();
   }, [user]);
 
-  const isPropertyOwner = role === "property_owner" || role === "admin";
-  const isTenant = role === "tenant";
-  const isAdmin = role === "admin";
-
-  return { role, loading, isPropertyOwner, isTenant, isAdmin };
+  return {
+    role,
+    loading,
+    isAdmin: role === "admin",
+    isPropertyOwner: role === "property_owner" || role === "admin",
+    isTenant: role === "tenant",
+  };
 };

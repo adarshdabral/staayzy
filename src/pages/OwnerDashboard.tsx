@@ -108,7 +108,7 @@ const OwnerDashboard = () => {
               Property Dashboard
             </h1>
             <p className="text-muted-foreground">
-              Manage your properties and bookings
+              Manage your properties and bookings..
             </p>
           </div>
           <Button className="gap-2">
