@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          created_at: string
+          data: Json | null
+          id: string
+          is_read: boolean | null
+          message: string
+          read_at: string | null
+          target_role: Database["public"]["Enums"]["admin_role"] | null
+          target_user_id: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Insert: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          read_at?: string | null
+          target_role?: Database["public"]["Enums"]["admin_role"] | null
+          target_user_id?: string | null
+          title: string
+          type: Database["public"]["Enums"]["notification_type"]
+        }
+        Update: {
+          created_at?: string
+          data?: Json | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          read_at?: string | null
+          target_role?: Database["public"]["Enums"]["admin_role"] | null
+          target_user_id?: string | null
+          title?: string
+          type?: Database["public"]["Enums"]["notification_type"]
+        }
+        Relationships: []
+      }
+      admin_roles: {
+        Row: {
+          admin_role: Database["public"]["Enums"]["admin_role"]
+          assigned_by: string | null
+          assigned_city: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_role: Database["public"]["Enums"]["admin_role"]
+          assigned_by?: string | null
+          assigned_city?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_role?: Database["public"]["Enums"]["admin_role"]
+          assigned_by?: string | null
+          assigned_city?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           created_at: string
@@ -388,6 +457,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_admin_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["admin_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -395,11 +471,28 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
+      admin_role:
+        | "support_admin"
+        | "community_moderator"
+        | "service_marketplace_admin"
+        | "city_admin"
+        | "verification_admin"
+        | "finance_admin"
+        | "platform_admin"
+        | "super_admin"
       app_role: "admin" | "property_owner" | "tenant"
       booking_status: "pending" | "confirmed" | "cancelled" | "completed"
       buzz_category: "tip" | "warning" | "question" | "review" | "general"
+      notification_type:
+        | "booking_request"
+        | "listing_verification"
+        | "payment_alert"
+        | "user_report"
+        | "service_request"
+        | "system_alert"
       payment_status: "pending" | "completed" | "failed" | "refunded"
       room_availability: "available" | "occupied" | "maintenance"
     }
@@ -529,9 +622,27 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_role: [
+        "support_admin",
+        "community_moderator",
+        "service_marketplace_admin",
+        "city_admin",
+        "verification_admin",
+        "finance_admin",
+        "platform_admin",
+        "super_admin",
+      ],
       app_role: ["admin", "property_owner", "tenant"],
       booking_status: ["pending", "confirmed", "cancelled", "completed"],
       buzz_category: ["tip", "warning", "question", "review", "general"],
+      notification_type: [
+        "booking_request",
+        "listing_verification",
+        "payment_alert",
+        "user_report",
+        "service_request",
+        "system_alert",
+      ],
       payment_status: ["pending", "completed", "failed", "refunded"],
       room_availability: ["available", "occupied", "maintenance"],
     },
