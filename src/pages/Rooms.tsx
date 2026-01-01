@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
@@ -6,6 +6,8 @@ import RoomCard from "@/components/rooms/RoomCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 import {
   Select,
   SelectContent,
@@ -24,89 +26,10 @@ import {
   Wind,
   Dumbbell,
   Tv,
+  Loader2,
 } from "lucide-react";
 
-// Mock data
-const allRooms = [
-  {
-    id: "1",
-    title: "Cozy Studio Near University",
-    location: "Downtown, Near State University",
-    rent: 8500,
-    deposit: 17000,
-    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&auto=format&fit=crop&q=80",
-    rating: 4.8,
-    reviews: 24,
-    facilities: ["WiFi", "AC", "Attached Bath", "Furnished"],
-    available: true,
-    featured: true,
-  },
-  {
-    id: "2",
-    title: "Modern Shared Apartment",
-    location: "Tech Park Area, IT Hub",
-    rent: 6500,
-    deposit: 13000,
-    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&auto=format&fit=crop&q=80",
-    rating: 4.6,
-    reviews: 18,
-    facilities: ["WiFi", "Food", "Laundry", "Gym Access"],
-    available: true,
-    featured: true,
-  },
-  {
-    id: "3",
-    title: "Private Room with Garden View",
-    location: "Green Valley, Residential Area",
-    rent: 9500,
-    deposit: 19000,
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=80",
-    rating: 4.9,
-    reviews: 32,
-    facilities: ["WiFi", "Parking", "Kitchen", "Garden"],
-    available: true,
-    featured: false,
-  },
-  {
-    id: "4",
-    title: "Budget-Friendly Hostel Room",
-    location: "Student Zone, Near Metro",
-    rent: 4500,
-    deposit: 9000,
-    image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&auto=format&fit=crop&q=80",
-    rating: 4.3,
-    reviews: 45,
-    facilities: ["WiFi", "Food", "Power Backup"],
-    available: true,
-    featured: false,
-  },
-  {
-    id: "5",
-    title: "Luxury Suite Near Mall",
-    location: "Central Business District",
-    rent: 15000,
-    deposit: 30000,
-    image: "https://images.unsplash.com/photo-1598928506311-c55ez13a1c49?w=800&auto=format&fit=crop&q=80",
-    rating: 4.9,
-    reviews: 12,
-    facilities: ["WiFi", "AC", "Gym", "Pool", "Parking"],
-    available: true,
-    featured: true,
-  },
-  {
-    id: "6",
-    title: "Shared Room for Girls",
-    location: "Safe Colony, Near Hospital",
-    rent: 3500,
-    deposit: 7000,
-    image: "https://images.unsplash.com/photo-1595526114035-0d45ed16cfbf?w=800&auto=format&fit=crop&q=80",
-    rating: 4.5,
-    reviews: 28,
-    facilities: ["WiFi", "Food", "Security"],
-    available: true,
-    featured: false,
-  },
-];
+type Room = Tables<"rooms">;
 
 const facilities = [
   { id: "wifi", label: "WiFi", icon: Wifi },
@@ -123,6 +46,84 @@ const Rooms = () => {
   const [priceRange, setPriceRange] = useState("all");
   const [selectedFacilities, setSelectedFacilities] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [page, setPage] = useState(0);
+  const LIMIT = 12;
+
+  const fetchRooms = async (pageNum: number = 0, append: boolean = false) => {
+    if (pageNum === 0) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
+    let query = supabase
+      .from("rooms")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(pageNum * LIMIT, (pageNum + 1) * LIMIT - 1);
+
+    // Apply search filter
+    if (searchQuery) {
+      query = query.or(`location_city.ilike.%${searchQuery}%,location_address.ilike.%${searchQuery}%,title.ilike.%${searchQuery}%`);
+    }
+
+    // Apply price filter
+    if (priceRange !== "all") {
+      switch (priceRange) {
+        case "0-5000":
+          query = query.lte("rent_amount", 5000);
+          break;
+        case "5000-10000":
+          query = query.gte("rent_amount", 5000).lte("rent_amount", 10000);
+          break;
+        case "10000-15000":
+          query = query.gte("rent_amount", 10000).lte("rent_amount", 15000);
+          break;
+        case "15000+":
+          query = query.gte("rent_amount", 15000);
+          break;
+      }
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Error fetching rooms:", error);
+    } else {
+      const filteredRooms = selectedFacilities.length > 0
+        ? data?.filter((room) =>
+            selectedFacilities.every((f) =>
+              room.facilities?.some((rf) => rf.toLowerCase().includes(f.toLowerCase()))
+            )
+          ) || []
+        : data || [];
+
+      if (append) {
+        setRooms((prev) => [...prev, ...filteredRooms]);
+      } else {
+        setRooms(filteredRooms);
+      }
+      setHasMore((data?.length || 0) === LIMIT);
+    }
+
+    setLoading(false);
+    setLoadingMore(false);
+  };
+
+  useEffect(() => {
+    setPage(0);
+    fetchRooms(0, false);
+  }, [searchQuery, priceRange, selectedFacilities]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchRooms(nextPage, true);
+  };
 
   const toggleFacility = (id: string) => {
     setSelectedFacilities((prev) =>
@@ -149,7 +150,7 @@ const Rooms = () => {
               Find Your Room
             </h1>
             <p className="text-muted-foreground mt-2">
-              Discover {allRooms.length} verified rooms available for rent
+              Discover verified rooms available for rent
             </p>
           </div>
 
@@ -197,7 +198,7 @@ const Rooms = () => {
               </Button>
 
               {/* Search Button */}
-              <Button variant="hero" className="gap-2 h-12">
+              <Button variant="hero" className="gap-2 h-12" onClick={() => fetchRooms(0)}>
                 <Search className="w-4 h-4" />
                 Search
               </Button>
@@ -272,24 +273,49 @@ const Rooms = () => {
           </div>
 
           {/* Results */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {allRooms.map((room, index) => (
-              <div
-                key={room.id}
-                className="animate-fade-up"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <RoomCard room={room} />
-              </div>
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : rooms.length === 0 ? (
+            <div className="text-center py-20">
+              <p className="text-xl text-muted-foreground">No rooms found</p>
+              <p className="text-sm text-muted-foreground mt-2">Try adjusting your filters</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {rooms.map((room, index) => (
+                <div
+                  key={room.id}
+                  className="animate-fade-up"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <RoomCard room={room} />
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Load More */}
-          <div className="text-center mt-12">
-            <Button variant="outline" size="lg">
-              Load More Rooms
-            </Button>
-          </div>
+          {!loading && rooms.length > 0 && hasMore && (
+            <div className="text-center mt-12">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={loadMore}
+                disabled={loadingMore}
+              >
+                {loadingMore ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Loading...
+                  </>
+                ) : (
+                  "Load More Rooms"
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </main>
       <Footer />

@@ -1,30 +1,25 @@
 import { Link } from "react-router-dom";
-import { MapPin, Star, Wifi, Utensils, Car, Wind, Heart } from "lucide-react";
+import { MapPin, Star, Wifi, Utensils, Car, Wind, Heart, Dumbbell, Tv, Bath, BedDouble } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
+import { Tables } from "@/integrations/supabase/types";
+
+type Room = Tables<"rooms">;
 
 interface RoomCardProps {
-  room: {
-    id: string;
-    title: string;
-    location: string;
-    rent: number;
-    deposit: number;
-    image: string;
-    rating: number;
-    reviews: number;
-    facilities: string[];
-    available: boolean;
-    featured?: boolean;
-  };
+  room: Room;
 }
 
 const facilityIcons: Record<string, typeof Wifi> = {
-  WiFi: Wifi,
-  Food: Utensils,
-  Parking: Car,
-  AC: Wind,
+  wifi: Wifi,
+  food: Utensils,
+  parking: Car,
+  ac: Wind,
+  gym: Dumbbell,
+  tv: Tv,
+  "attached bath": Bath,
+  furnished: BedDouble,
 };
 
 const RoomCard = ({ room }: RoomCardProps) => {
@@ -38,12 +33,16 @@ const RoomCard = ({ room }: RoomCardProps) => {
     }).format(price);
   };
 
+  const imageUrl = room.images && room.images.length > 0 
+    ? room.images[0] 
+    : "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&auto=format&fit=crop&q=80";
+
   return (
     <div className="group bg-card rounded-2xl overflow-hidden border border-border shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-1">
       {/* Image Container */}
       <div className="relative aspect-[4/3] overflow-hidden">
         <img
-          src={room.image}
+          src={imageUrl}
           alt={room.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
@@ -53,17 +52,19 @@ const RoomCard = ({ room }: RoomCardProps) => {
         
         {/* Badges */}
         <div className="absolute top-3 left-3 flex gap-2">
-          {room.featured && (
+          {room.is_featured && (
             <Badge className="bg-accent text-accent-foreground border-0">
               Featured
             </Badge>
           )}
-          {room.available ? (
+          {room.availability === "available" ? (
             <Badge className="bg-secondary text-secondary-foreground border-0">
               Available
             </Badge>
           ) : (
-            <Badge variant="destructive">Occupied</Badge>
+            <Badge variant="destructive">
+              {room.availability === "occupied" ? "Occupied" : "Maintenance"}
+            </Badge>
           )}
         </div>
 
@@ -83,7 +84,7 @@ const RoomCard = ({ room }: RoomCardProps) => {
         <div className="absolute bottom-3 left-3">
           <div className="bg-card/90 backdrop-blur-sm rounded-lg px-3 py-1.5">
             <span className="text-lg font-bold text-foreground">
-              {formatPrice(room.rent)}
+              {formatPrice(Number(room.rent_amount))}
             </span>
             <span className="text-sm text-muted-foreground">/month</span>
           </div>
@@ -98,24 +99,24 @@ const RoomCard = ({ room }: RoomCardProps) => {
         </h3>
         <div className="flex items-center gap-1.5 mt-1.5 text-muted-foreground">
           <MapPin className="w-4 h-4 text-primary" />
-          <span className="text-sm line-clamp-1">{room.location}</span>
+          <span className="text-sm line-clamp-1">{room.location_city}, {room.location_address}</span>
         </div>
 
         {/* Rating */}
         <div className="flex items-center gap-2 mt-3">
           <div className="flex items-center gap-1 bg-primary/10 rounded-md px-2 py-1">
             <Star className="w-4 h-4 text-primary fill-primary" />
-            <span className="text-sm font-semibold text-primary">{room.rating}</span>
+            <span className="text-sm font-semibold text-primary">{Number(room.rating || 0).toFixed(1)}</span>
           </div>
           <span className="text-sm text-muted-foreground">
-            ({room.reviews} reviews)
+            ({room.review_count || 0} reviews)
           </span>
         </div>
 
         {/* Facilities */}
         <div className="flex flex-wrap gap-2 mt-3">
-          {room.facilities.slice(0, 4).map((facility) => {
-            const Icon = facilityIcons[facility] || Wifi;
+          {room.facilities?.slice(0, 4).map((facility) => {
+            const Icon = facilityIcons[facility.toLowerCase()] || Wifi;
             return (
               <div
                 key={facility}
