@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Home, Plus, Calendar, DollarSign, Eye, Building2 } from "lucide-react";
-
+import AddPropertyDialog from "@/components/owner/AddPropertyDialog";
 const OwnerDashboard = () => {
   const { user } = useAuth();
   const [rooms, setRooms] = useState<any[]>([]);
@@ -20,55 +20,57 @@ const OwnerDashboard = () => {
     totalEarnings: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [showAddProperty, setShowAddProperty] = useState(false);
+
+  const fetchData = async () => {
+    if (!user) return;
+
+    setLoading(true);
+    const [roomsRes, bookingsRes] = await Promise.all([
+      supabase
+        .from("rooms")
+        .select("*")
+        .eq("owner_id", user.id)
+        .order("created_at", { ascending: false }),
+      supabase
+        .from("bookings")
+        .select("*, rooms(*)")
+        .eq("owner_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(10),
+    ]);
+
+    if (roomsRes.data) {
+      setRooms(roomsRes.data);
+      const available = roomsRes.data.filter(
+        (r) => r.availability === "available"
+      ).length;
+      setStats((prev) => ({
+        ...prev,
+        totalRooms: roomsRes.data.length,
+        availableRooms: available,
+      }));
+    }
+
+    if (bookingsRes.data) {
+      setBookings(bookingsRes.data);
+      const pending = bookingsRes.data.filter(
+        (b) => b.status === "pending"
+      ).length;
+      const earnings = bookingsRes.data
+        .filter((b) => b.status === "confirmed" || b.status === "completed")
+        .reduce((sum, b) => sum + (b.monthly_rent || 0), 0);
+      setStats((prev) => ({
+        ...prev,
+        pendingBookings: pending,
+        totalEarnings: earnings,
+      }));
+    }
+
+    setLoading(false);
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      if (!user) return;
-
-      const [roomsRes, bookingsRes] = await Promise.all([
-        supabase
-          .from("rooms")
-          .select("*")
-          .eq("owner_id", user.id)
-          .order("created_at", { ascending: false }),
-        supabase
-          .from("bookings")
-          .select("*, rooms(*)")
-          .eq("owner_id", user.id)
-          .order("created_at", { ascending: false })
-          .limit(10),
-      ]);
-
-      if (roomsRes.data) {
-        setRooms(roomsRes.data);
-        const available = roomsRes.data.filter(
-          (r) => r.availability === "available"
-        ).length;
-        setStats((prev) => ({
-          ...prev,
-          totalRooms: roomsRes.data.length,
-          availableRooms: available,
-        }));
-      }
-
-      if (bookingsRes.data) {
-        setBookings(bookingsRes.data);
-        const pending = bookingsRes.data.filter(
-          (b) => b.status === "pending"
-        ).length;
-        const earnings = bookingsRes.data
-          .filter((b) => b.status === "confirmed" || b.status === "completed")
-          .reduce((sum, b) => sum + (b.monthly_rent || 0), 0);
-        setStats((prev) => ({
-          ...prev,
-          pendingBookings: pending,
-          totalEarnings: earnings,
-        }));
-      }
-
-      setLoading(false);
-    };
-
     fetchData();
   }, [user]);
 
@@ -111,7 +113,7 @@ const OwnerDashboard = () => {
               Manage your properties and bookings..
             </p>
           </div>
-          <Button className="gap-2">
+          <Button className="gap-2" onClick={() => setShowAddProperty(true)}>
             <Plus className="h-4 w-4" />
             Add Property
           </Button>
@@ -197,7 +199,7 @@ const OwnerDashboard = () => {
                 <div className="text-center py-8">
                   <Home className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground mb-4">No properties yet</p>
-                  <Button className="gap-2">
+                  <Button className="gap-2" onClick={() => setShowAddProperty(true)}>
                     <Plus className="h-4 w-4" />
                     Add Your First Property
                   </Button>
@@ -292,6 +294,11 @@ const OwnerDashboard = () => {
         </div>
       </main>
       <Footer />
+      <AddPropertyDialog
+        open={showAddProperty}
+        onOpenChange={setShowAddProperty}
+        onSuccess={fetchData}
+      />
     </div>
   );
 };

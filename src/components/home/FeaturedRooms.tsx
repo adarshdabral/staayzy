@@ -1,65 +1,38 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import RoomCard from "@/components/rooms/RoomCard";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Tables } from "@/integrations/supabase/types";
 
-// Mock data for featured rooms
-const featuredRooms = [
-  {
-    id: "1",
-    title: "Cozy Studio Near University",
-    location: "Downtown, Near State University",
-    rent: 8500,
-    deposit: 17000,
-    image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&auto=format&fit=crop&q=80",
-    rating: 4.8,
-    reviews: 24,
-    facilities: ["WiFi", "AC", "Attached Bath", "Furnished"],
-    available: true,
-    featured: true,
-  },
-  {
-    id: "2",
-    title: "Modern Shared Apartment",
-    location: "Tech Park Area, IT Hub",
-    rent: 6500,
-    deposit: 13000,
-    image: "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&auto=format&fit=crop&q=80",
-    rating: 4.6,
-    reviews: 18,
-    facilities: ["WiFi", "Food", "Laundry", "Gym Access"],
-    available: true,
-    featured: true,
-  },
-  {
-    id: "3",
-    title: "Private Room with Garden View",
-    location: "Green Valley, Residential Area",
-    rent: 9500,
-    deposit: 19000,
-    image: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop&q=80",
-    rating: 4.9,
-    reviews: 32,
-    facilities: ["WiFi", "Parking", "Kitchen", "Garden"],
-    available: true,
-    featured: false,
-  },
-  {
-    id: "4",
-    title: "Budget-Friendly Hostel Room",
-    location: "Student Zone, Near Metro",
-    rent: 4500,
-    deposit: 9000,
-    image: "https://images.unsplash.com/photo-1555854877-bab0e564b8d5?w=800&auto=format&fit=crop&q=80",
-    rating: 4.3,
-    reviews: 45,
-    facilities: ["WiFi", "Food", "Power Backup"],
-    available: true,
-    featured: false,
-  },
-];
+type Room = Tables<"rooms">;
 
 const FeaturedRooms = () => {
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFeaturedRooms = async () => {
+      const { data, error } = await supabase
+        .from("rooms")
+        .select("*")
+        .eq("availability", "available")
+        .order("is_featured", { ascending: false })
+        .order("rating", { ascending: false })
+        .limit(4);
+
+      if (error) {
+        console.error("Error fetching featured rooms:", error);
+      } else {
+        setRooms(data || []);
+      }
+      setLoading(false);
+    };
+
+    fetchFeaturedRooms();
+  }, []);
+
   return (
     <section className="py-20 bg-background">
       <div className="container mx-auto px-4">
@@ -86,17 +59,30 @@ const FeaturedRooms = () => {
         </div>
 
         {/* Room Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {featuredRooms.map((room, index) => (
-            <div
-              key={room.id}
-              className="animate-fade-up"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <RoomCard room={room} />
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          </div>
+        ) : rooms.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">No rooms available yet. Be the first to list!</p>
+            <Link to="/dashboard">
+              <Button className="mt-4">List Your Property</Button>
+            </Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {rooms.map((room, index) => (
+              <div
+                key={room.id}
+                className="animate-fade-up"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <RoomCard room={room} />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

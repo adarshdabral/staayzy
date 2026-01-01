@@ -64,17 +64,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
 
-      // If signup was successful and we have a user, update their role
-      if (data.user) {
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .update({ role: role })
-          .eq("user_id", data.user.id);
-
-        if (roleError) {
-          console.error("Error updating role:", roleError);
-        }
-      }
+      // Role is now set by the database trigger based on user metadata
 
       return { error: null };
     } catch (error) {
