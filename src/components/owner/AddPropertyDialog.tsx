@@ -332,9 +332,14 @@ const AddPropertyDialog = ({ open, onOpenChange, onSuccess }: AddPropertyDialogP
                 value={newRule}
                 onChange={(e) => setNewRule(e.target.value)}
                 placeholder="Add a house rule..."
-                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addHouseRule())}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addHouseRule();
+                  }
+                }}
               />
-              <Button type="button" variant="outline" onClick={addHouseRule}>
+              <Button type="button" variant="outline" onClick={() => addHouseRule()}>
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
@@ -364,9 +369,14 @@ const AddPropertyDialog = ({ open, onOpenChange, onSuccess }: AddPropertyDialogP
                 value={newImage}
                 onChange={(e) => setNewImage(e.target.value)}
                 placeholder="Paste image URL..."
-                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addImage())}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addImage();
+                  }
+                }}
               />
-              <Button type="button" variant="outline" onClick={addImage}>
+              <Button type="button" variant="outline" onClick={() => addImage()}>
                 <Plus className="w-4 h-4" />
               </Button>
             </div>
