@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -8,19 +8,15 @@ import {
   Star,
   Heart,
   Share2,
-  Wifi,
-  Utensils,
-  Car,
-  Wind,
   CheckCircle,
-  User,
   Calendar,
-  Phone,
-  MessageSquare,
   Shield,
   ArrowLeft,
 } from "lucide-react";
 import { useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock room data
 const roomData = {
@@ -59,8 +55,62 @@ const roomData = {
 
 const RoomDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [selectedImage, setSelectedImage] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
+
+  const handleBooking = async () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please login to book this room",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
+    }
+
+    setIsBooking(true);
+    try {
+      // Get user profile for the notification
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("full_name, email")
+        .eq("id", user.id)
+        .single();
+
+      // Send notification to admin
+      const { error } = await supabase.functions.invoke("send-booking-notification", {
+        body: {
+          roomId: id,
+          roomTitle: roomData.title,
+          tenantName: profile?.full_name || "Unknown",
+          tenantEmail: profile?.email || user.email,
+          startDate: roomData.availableFrom,
+          monthlyRent: roomData.rent,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Booking Request Sent",
+        description: "Your booking request has been sent to the admin for approval. You'll be notified once reviewed.",
+      });
+    } catch (error) {
+      console.error("Booking error:", error);
+      toast({
+        title: "Booking Failed",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsBooking(false);
+    }
+  };
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -236,12 +286,14 @@ const RoomDetails = () => {
                     Available from {new Date(roomData.availableFrom).toLocaleDateString()}
                   </div>
 
-                  <Button variant="hero" size="lg" className="w-full gap-2">
-                    Book Now
-                  </Button>
-                  <Button variant="outline" size="lg" className="w-full gap-2">
-                    <MessageSquare className="w-4 h-4" />
-                    Contact Owner
+                  <Button 
+                    variant="hero" 
+                    size="lg" 
+                    className="w-full gap-2"
+                    onClick={handleBooking}
+                    disabled={isBooking}
+                  >
+                    {isBooking ? "Processing..." : "Book Now"}
                   </Button>
 
                   <p className="text-xs text-center text-muted-foreground">
