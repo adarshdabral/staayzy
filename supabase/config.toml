@@ -1,4 +1,4 @@
 project_id = "mtiqnowlnixppjyracfo"
 
 [functions.send-booking-notification]
-verify_jwt = true
+verify_jwt = false
