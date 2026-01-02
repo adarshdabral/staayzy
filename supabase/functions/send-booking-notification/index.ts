@@ -8,6 +8,7 @@ const corsHeaders = {
 };
 
 interface BookingNotificationRequest {
+  bookingId?: string;
   roomId: string;
   roomTitle: string;
   tenantName: string;
@@ -29,9 +30,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { roomId, roomTitle, tenantName, tenantEmail, startDate, monthlyRent }: BookingNotificationRequest = await req.json();
+    const { bookingId, roomId, roomTitle, tenantName, tenantEmail, startDate, monthlyRent }: BookingNotificationRequest = await req.json();
 
-    console.log("Creating booking notification for room:", roomId);
+    console.log("Creating booking notification for room:", roomId, "booking:", bookingId);
 
     // Create notification in database for platform admins
     const { error: notificationError } = await supabase
@@ -41,6 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
         title: "New Booking Request",
         message: `${tenantName} has requested to book "${roomTitle}" starting ${startDate}`,
         data: {
+          booking_id: bookingId,
           room_id: roomId,
           room_title: roomTitle,
           tenant_name: tenantName,
@@ -53,51 +55,60 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (notificationError) {
       console.error("Error creating notification:", notificationError);
-      throw new Error("Failed to create notification");
+      // Don't throw - we still want to try sending email
+    } else {
+      console.log("Database notification created successfully");
     }
-
-    console.log("Database notification created successfully");
 
     // Send email notification if Resend is configured
     if (resendApiKey) {
-      const resend = new Resend(resendApiKey);
+      try {
+        const resend = new Resend(resendApiKey);
 
-      // Get admin emails (super_admin and platform_admin)
-      const { data: adminRoles } = await supabase
-        .from("admin_roles")
-        .select("user_id")
-        .in("admin_role", ["super_admin", "platform_admin"]);
+        // Get admin emails (super_admin and platform_admin)
+        const { data: adminRoles } = await supabase
+          .from("admin_roles")
+          .select("user_id")
+          .in("admin_role", ["super_admin", "platform_admin"]);
 
-      if (adminRoles && adminRoles.length > 0) {
-        const userIds = adminRoles.map((r) => r.user_id);
-        
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("email")
-          .in("id", userIds);
+        if (adminRoles && adminRoles.length > 0) {
+          const userIds = adminRoles.map((r) => r.user_id);
+          
+          const { data: profiles } = await supabase
+            .from("profiles")
+            .select("email")
+            .in("id", userIds);
 
-        const adminEmails = profiles?.map((p) => p.email).filter(Boolean) || [];
+          const adminEmails = profiles?.map((p) => p.email).filter(Boolean) || [];
 
-        if (adminEmails.length > 0) {
-          const emailResponse = await resend.emails.send({
-            from: "Stazy <onboarding@resend.dev>",
-            to: adminEmails,
-            subject: `New Booking Request: ${roomTitle}`,
-            html: `
-              <h1>New Booking Request</h1>
-              <p><strong>${tenantName}</strong> (${tenantEmail}) has requested to book:</p>
-              <ul>
-                <li><strong>Room:</strong> ${roomTitle}</li>
-                <li><strong>Start Date:</strong> ${startDate}</li>
-                <li><strong>Monthly Rent:</strong> ₹${monthlyRent.toLocaleString()}</li>
-              </ul>
-              <p>Please log in to the admin panel to review this booking request.</p>
-              <p>Best regards,<br>Stazy Platform</p>
-            `,
-          });
+          if (adminEmails.length > 0) {
+            const emailResponse = await resend.emails.send({
+              from: "Stazy <onboarding@resend.dev>",
+              to: adminEmails,
+              subject: `New Booking Request: ${roomTitle}`,
+              html: `
+                <h1>New Booking Request</h1>
+                <p><strong>${tenantName}</strong> (${tenantEmail}) has requested to book:</p>
+                <ul>
+                  <li><strong>Room:</strong> ${roomTitle}</li>
+                  <li><strong>Start Date:</strong> ${startDate}</li>
+                  <li><strong>Monthly Rent:</strong> ₹${monthlyRent.toLocaleString()}</li>
+                </ul>
+                <p>Please log in to the admin panel to review this booking request.</p>
+                <p>Best regards,<br>Stazy Platform</p>
+              `,
+            });
 
-          console.log("Email notification sent:", emailResponse);
+            console.log("Email notification sent:", emailResponse);
+          } else {
+            console.log("No admin emails found to send notification");
+          }
+        } else {
+          console.log("No admins found in database");
         }
+      } catch (emailError) {
+        console.error("Error sending email:", emailError);
+        // Don't throw - notification was created in database
       }
     } else {
       console.log("RESEND_API_KEY not configured, skipping email notification");
