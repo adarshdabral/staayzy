@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,7 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, X, Upload, Image as ImageIcon } from "lucide-react";
 
 interface AddPropertyDialogProps {
   open: boolean;
@@ -63,7 +63,8 @@ const AddPropertyDialog = ({ open, onOpenChange, onSuccess }: AddPropertyDialogP
   });
 
   const [newRule, setNewRule] = useState("");
-  const [newImage, setNewImage] = useState("");
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -95,13 +96,82 @@ const AddPropertyDialog = ({ open, onOpenChange, onSuccess }: AddPropertyDialogP
     }));
   };
 
-  const addImage = () => {
-    if (newImage.trim()) {
-      setFormData((prev) => ({
-        ...prev,
-        images: [...prev.images, newImage.trim()],
-      }));
-      setNewImage("");
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !user) return;
+
+    setUploadingImages(true);
+    const uploadedUrls: string[] = [];
+
+    try {
+      for (const file of Array.from(files)) {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          toast({
+            title: "Invalid file",
+            description: `${file.name} is not an image file`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          toast({
+            title: "File too large",
+            description: `${file.name} exceeds 5MB limit`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('property-images')
+          .upload(fileName, file);
+
+        if (uploadError) {
+          console.error('Upload error:', uploadError);
+          toast({
+            title: "Upload failed",
+            description: `Failed to upload ${file.name}`,
+            variant: "destructive",
+          });
+          continue;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('property-images')
+          .getPublicUrl(fileName);
+
+        uploadedUrls.push(publicUrl);
+      }
+
+      if (uploadedUrls.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          images: [...prev.images, ...uploadedUrls],
+        }));
+        toast({
+          title: "Images uploaded",
+          description: `${uploadedUrls.length} image(s) uploaded successfully`,
+        });
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast({
+        title: "Upload failed",
+        description: "An error occurred while uploading images",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImages(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -363,37 +433,66 @@ const AddPropertyDialog = ({ open, onOpenChange, onSuccess }: AddPropertyDialogP
 
           {/* Images */}
           <div className="space-y-4">
-            <h4 className="font-medium text-foreground">Images (URLs)</h4>
-            <div className="flex gap-2">
-              <Input
-                value={newImage}
-                onChange={(e) => setNewImage(e.target.value)}
-                placeholder="Paste image URL..."
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addImage();
-                  }
-                }}
+            <h4 className="font-medium text-foreground">Property Images</h4>
+            
+            {/* Upload Button */}
+            <div className="flex flex-col gap-3">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleImageUpload}
+                className="hidden"
+                id="image-upload"
               />
-              <Button type="button" variant="outline" onClick={() => addImage()}>
-                <Plus className="w-4 h-4" />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingImages}
+                className="w-full h-24 border-dashed border-2 hover:border-primary"
+              >
+                {uploadingImages ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    Uploading...
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="w-6 h-6 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Click to upload images (max 5MB each)
+                    </span>
+                  </div>
+                )}
               </Button>
             </div>
+
+            {/* Image Preview Grid */}
             {formData.images.length > 0 && (
               <div className="grid grid-cols-3 gap-2">
                 {formData.images.map((url, index) => (
-                  <div key={index} className="relative aspect-video rounded-lg overflow-hidden border border-border">
+                  <div key={index} className="relative aspect-video rounded-lg overflow-hidden border border-border group">
                     <img src={url} alt={`Property ${index + 1}`} className="w-full h-full object-cover" />
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
-                      className="absolute top-1 right-1 w-6 h-6 bg-destructive rounded-full flex items-center justify-center"
+                      className="absolute top-1 right-1 w-6 h-6 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="w-3 h-3 text-destructive-foreground" />
                     </button>
                   </div>
                 ))}
+              </div>
+            )}
+
+            {formData.images.length === 0 && (
+              <div className="flex items-center justify-center p-4 border border-dashed rounded-lg">
+                <div className="flex flex-col items-center text-muted-foreground">
+                  <ImageIcon className="w-8 h-8 mb-2" />
+                  <span className="text-sm">No images uploaded yet</span>
+                </div>
               </div>
             )}
           </div>
