@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Home, Search, MessageSquare, ShoppingBag, Menu, X, User, LogOut, Loader2, LayoutDashboard } from "lucide-react";
+import { Home, Search, MessageSquare, ShoppingBag, Menu, X, User, LogOut, Loader2, LayoutDashboard, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminRole } from "@/hooks/useAdminRole";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,7 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut, loading } = useAuth();
+  const { isAdmin } = useAdminRole();
 
   const handleSignOut = async () => {
     await signOut();
@@ -86,6 +88,14 @@ const Navbar = () => {
                       Dashboard
                     </Link>
                   </DropdownMenuItem>
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin" className="flex items-center cursor-pointer">
+                        <Shield className="w-4 h-4 mr-2" />
+                        Admin Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
                     <LogOut className="w-4 h-4 mr-2" />
@@ -149,6 +159,14 @@ const Navbar = () => {
                       Dashboard
                     </Button>
                   </Link>
+                  {isAdmin && (
+                    <Link to="/admin" onClick={() => setIsOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start gap-3">
+                        <Shield className="w-5 h-5" />
+                        Admin Dashboard
+                      </Button>
+                    </Link>
+                  )}
                   <Button
                     variant="ghost"
                     className="w-full justify-start gap-3 text-destructive hover:text-destructive"
