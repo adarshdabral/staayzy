@@ -7,11 +7,29 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import { Home, Plus, Calendar, DollarSign, Eye, Building2 } from "lucide-react";
+import { Home, Plus, Calendar, DollarSign, Eye, Building2, Pencil } from "lucide-react";
 import AddPropertyDialog from "@/components/owner/AddPropertyDialog";
+import EditPropertyDialog from "@/components/owner/EditPropertyDialog";
+
+interface Room {
+  id: string;
+  title: string;
+  description: string | null;
+  location_address: string;
+  location_city: string;
+  location_state: string | null;
+  rent_amount: number;
+  security_deposit: number | null;
+  availability: "available" | "occupied" | "maintenance";
+  facilities: string[] | null;
+  house_rules: string[] | null;
+  images: string[] | null;
+  review_count: number | null;
+}
+
 const OwnerDashboard = () => {
   const { user } = useAuth();
-  const [rooms, setRooms] = useState<any[]>([]);
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
   const [stats, setStats] = useState({
     totalRooms: 0,
@@ -21,6 +39,8 @@ const OwnerDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [showAddProperty, setShowAddProperty] = useState(false);
+  const [showEditProperty, setShowEditProperty] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState<Room | null>(null);
 
   const fetchData = async () => {
     if (!user) return;
@@ -215,9 +235,22 @@ const OwnerDashboard = () => {
                         <h4 className="font-medium text-foreground">
                           {room.title}
                         </h4>
-                        <Badge className={getAvailabilityColor(room.availability)}>
-                          {room.availability}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge className={getAvailabilityColor(room.availability)}>
+                            {room.availability}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0"
+                            onClick={() => {
+                              setSelectedRoom(room);
+                              setShowEditProperty(true);
+                            }}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {room.location_city}
@@ -298,6 +331,12 @@ const OwnerDashboard = () => {
         open={showAddProperty}
         onOpenChange={setShowAddProperty}
         onSuccess={fetchData}
+      />
+      <EditPropertyDialog
+        open={showEditProperty}
+        onOpenChange={setShowEditProperty}
+        onSuccess={fetchData}
+        room={selectedRoom}
       />
     </div>
   );
