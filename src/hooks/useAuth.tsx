@@ -1,15 +1,18 @@
 import { useState, useEffect, createContext, useContext } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+
+interface SignupData {
+  fullName: string;
+  role: "tenant" | "property_owner";
+}
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, fullName: string, role: "tenant" | "property_owner") => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInWithPhone: (phone: string, signupData?: SignupData) => Promise<{ error: Error | null }>;
+  verifyOtp: (phone: string, token: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -19,7 +22,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -41,42 +43,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (
-    email: string,
-    password: string,
-    fullName: string,
-    role: "tenant" | "property_owner"
-  ) => {
+  const signInWithPhone = async (phone: string, signupData?: SignupData) => {
     try {
-      const redirectUrl = `${window.location.origin}/`;
+      const options: { phone: string; options?: { data?: Record<string, string> } } = { phone };
       
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
+      if (signupData) {
+        options.options = {
           data: {
-            full_name: fullName,
-            role: role,
+            full_name: signupData.fullName,
+            role: signupData.role,
           },
-        },
-      });
+        };
+      }
+
+      const { error } = await supabase.auth.signInWithOtp(options);
 
       if (error) throw error;
-
-      // Role is now set by the database trigger based on user metadata
-
       return { error: null };
     } catch (error) {
       return { error: error as Error };
     }
   };
 
-  const signIn = async (email: string, password: string) => {
+  const verifyOtp = async (phone: string, token: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+      const { error } = await supabase.auth.verifyOtp({
+        phone,
+        token,
+        type: "sms",
       });
 
       if (error) throw error;
@@ -91,7 +85,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signInWithPhone, verifyOtp, signOut }}>
       {children}
     </AuthContext.Provider>
   );
