@@ -5,14 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 interface SignupData {
   fullName: string;
   role: "tenant" | "property_owner";
+  phone: string;
 }
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signInWithPhone: (phone: string, signupData?: SignupData) => Promise<{ error: Error | null }>;
-  verifyOtp: (phone: string, token: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, signupData: SignupData) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -43,20 +44,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithPhone = async (phone: string, signupData?: SignupData) => {
+  const signUp = async (email: string, password: string, signupData: SignupData) => {
     try {
-      const options: { phone: string; options?: { data?: Record<string, string> } } = { phone };
+      const redirectUrl = `${window.location.origin}/`;
       
-      if (signupData) {
-        options.options = {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
           data: {
             full_name: signupData.fullName,
             role: signupData.role,
+            phone: signupData.phone,
           },
-        };
-      }
-
-      const { error } = await supabase.auth.signInWithOtp(options);
+        },
+      });
 
       if (error) throw error;
       return { error: null };
@@ -65,12 +68,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const verifyOtp = async (phone: string, token: string) => {
+  const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.verifyOtp({
-        phone,
-        token,
-        type: "sms",
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
       if (error) throw error;
@@ -85,7 +87,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithPhone, verifyOtp, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
