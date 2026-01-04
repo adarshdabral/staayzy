@@ -482,7 +482,7 @@ const RoomDetails = () => {
 
                   <p className="text-xs text-center text-muted-foreground">
                     <Shield className="w-4 h-4 inline mr-1" />
-                    Secure payment protected by Stazy
+                    Secure payment protected by Staayzy
                   </p>
                 </div>
               </div>

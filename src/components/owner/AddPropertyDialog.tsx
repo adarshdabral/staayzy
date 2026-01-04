@@ -259,7 +259,7 @@ const AddPropertyDialog = ({ open, onOpenChange, onSuccess }: AddPropertyDialogP
         <DialogHeader>
           <DialogTitle>Add New Property</DialogTitle>
           <DialogDescription>
-            Fill in the details to list your property on Stazy
+            Fill in the details to list your property on Staayzy
           </DialogDescription>
         </DialogHeader>
 

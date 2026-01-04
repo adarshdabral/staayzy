@@ -116,7 +116,7 @@ const Auth = () => {
         } else {
           toast({
             title: "Account created!",
-            description: "Welcome to Stazy!",
+            description: "Welcome to Staayzy!",
           });
           navigate("/");
         }
@@ -164,7 +164,7 @@ const Auth = () => {
           <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
             <Home className="w-5 h-5 text-primary-foreground" />
           </div>
-          <span className="text-xl font-bold text-foreground">Stazy</span>
+          <span className="text-xl font-bold text-foreground">Staayzy</span>
         </Link>
       </header>
 
@@ -178,7 +178,7 @@ const Auth = () => {
             <CardDescription>
               {mode === "login"
                 ? "Enter your credentials to continue"
-                : "Join Stazy to find or list rooms"}
+                : "Join Staayzy to find or list rooms"}
             </CardDescription>
           </CardHeader>
 

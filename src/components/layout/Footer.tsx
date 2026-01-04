@@ -12,7 +12,7 @@ const Footer = () => {
               <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
                 <Home className="w-5 h-5 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-foreground">Stazy</span>
+              <span className="text-xl font-bold text-foreground">Staayzy</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed">
               Find your perfect room. Connect with verified property owners. 
@@ -60,7 +60,7 @@ const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-3 text-muted-foreground text-sm">
                 <Mail className="w-4 h-4 text-primary" />
-                support@stazy.com
+                support@staayzy.com
               </li>
               <li className="flex items-center gap-3 text-muted-foreground text-sm">
                 <Phone className="w-4 h-4 text-primary" />
@@ -76,7 +76,7 @@ const Footer = () => {
 
         <div className="border-t border-border mt-10 pt-6">
           <p className="text-center text-muted-foreground text-sm">
-            © {new Date().getFullYear()} Stazy. All rights reserved.
+            © {new Date().getFullYear()} Staayzy. All rights reserved.
           </p>
         </div>
       </div>

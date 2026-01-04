@@ -83,19 +83,20 @@ const handler = async (req: Request): Promise<Response> => {
 
           if (adminEmails.length > 0) {
             const emailResponse = await resend.emails.send({
-              from: "Stazy <onboarding@resend.dev>",
+              from: "Staayzy <onboarding@resend.dev>",
               to: adminEmails,
               subject: `New Booking Request: ${roomTitle}`,
               html: `
-                <h1>New Booking Request</h1>
-                <p><strong>${tenantName}</strong> (${tenantEmail}) has requested to book:</p>
+                <h2>New Booking Request</h2>
+                <p>A new booking request has been submitted:</p>
                 <ul>
                   <li><strong>Room:</strong> ${roomTitle}</li>
+                  <li><strong>Tenant:</strong> ${tenantName}</li>
                   <li><strong>Start Date:</strong> ${startDate}</li>
-                  <li><strong>Monthly Rent:</strong> ₹${monthlyRent.toLocaleString()}</li>
+                  <li><strong>Monthly Rent:</strong> ₹${monthlyRent}</li>
                 </ul>
                 <p>Please log in to the admin panel to review this booking request.</p>
-                <p>Best regards,<br>Stazy Platform</p>
+                <p>Best regards,<br>Staayzy Platform</p>
               `,
             });
 
