@@ -38,12 +38,17 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
-              <Home className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">Staayzy</span>
-          </Link>
+         <Link to="/" className="flex items-center gap-2">
+  <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
+    <img
+      src="/logo.png"
+      alt="Staayzy logo"
+      className="w-20 h-20 object-contain"
+    />
+  </div>
+  <span className="text-xl font-bold text-foreground">Staayzy</span>
+</Link>
+
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
