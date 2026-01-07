@@ -24,7 +24,10 @@ import {
   Utensils,
   Car,
   Wind,
-  Dumbbell,
+  Home,
+  Building,
+  Sofa,
+  WashingMachine,
   Tv,
   Loader2,
 } from "lucide-react";
@@ -36,8 +39,19 @@ const facilities = [
   { id: "food", label: "Food", icon: Utensils },
   { id: "parking", label: "Parking", icon: Car },
   { id: "ac", label: "AC", icon: Wind },
-  { id: "gym", label: "Gym", icon: Dumbbell },
   { id: "tv", label: "TV", icon: Tv },
+
+  // Property type
+  { id: "independent", label: "Independent", icon: Home },
+  { id: "semi_independent", label: "Semi-Independent", icon: Building },
+
+  // Furnishing type
+  { id: "furnished", label: "Furnished", icon: Sofa },
+  { id: "semi_furnished", label: "Semi-Furnished", icon: Sofa },
+  { id: "non_furnished", label: "Non-Furnished", icon: Home },
+
+  // Appliance
+  { id: "washing_machine", label: "Washing Machine", icon: WashingMachine }
 ];
 
 const Rooms = () => {
@@ -52,6 +66,7 @@ const Rooms = () => {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(0);
   const LIMIT = 12;
+  
 
   const fetchRooms = async (pageNum: number = 0, append: boolean = false) => {
     if (pageNum === 0) {
